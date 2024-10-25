@@ -2,7 +2,7 @@
 import copy
 import json
 from collections import defaultdict
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Optional, Dict, Any
 
 # Package/library imports
 from openai import OpenAI
@@ -24,17 +24,17 @@ __CTX_VARS_NAME__ = "context_variables"
 
 
 class Swarm:
-    def __init__(self, client=None):
+    def __init__(self, client: Optional[OpenAI] = None):
         if not client:
             client = OpenAI()
-        self.client = client
+        self.client: OpenAI = client
 
     def get_chat_completion(
         self,
         agent: Agent,
-        history: List,
-        context_variables: dict,
-        model_override: str,
+        history: List[Dict[str, Any]],
+        context_variables: Dict[str, Any],
+        model_override: Optional[str],
         stream: bool,
         debug: bool,
     ) -> ChatCompletionMessage:
@@ -68,7 +68,9 @@ class Swarm:
 
         return self.client.chat.completions.create(**create_params)
 
-    def handle_function_result(self, result, debug) -> Result:
+    def handle_function_result(
+        self, result: Union[Result, Agent], debug: bool
+    ) -> Result:
         match result:
             case Result() as result:
                 return result
@@ -94,8 +96,7 @@ class Swarm:
         debug: bool,
     ) -> Response:
         function_map = {f.__name__: f for f in functions}
-        partial_response = Response(
-            messages=[], agent=None, context_variables={})
+        partial_response = Response(messages=[], agent=None, context_variables={})
 
         for tool_call in tool_calls:
             name = tool_call.function.name
@@ -112,8 +113,7 @@ class Swarm:
                 )
                 continue
             args = json.loads(tool_call.function.arguments)
-            debug_print(
-                debug, f"Processing tool call: {name} with arguments {args}")
+            debug_print(debug, f"Processing tool call: {name} with arguments {args}")
 
             func = function_map[name]
             # pass context_variables to agent functions
@@ -188,8 +188,7 @@ class Swarm:
                 merge_chunk(message, delta)
             yield {"delim": "end"}
 
-            message["tool_calls"] = list(
-                message.get("tool_calls", {}).values())
+            message["tool_calls"] = list(message.get("tool_calls", {}).values())
             if not message["tool_calls"]:
                 message["tool_calls"] = None
             debug_print(debug, "Received completion:", message)

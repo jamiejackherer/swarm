@@ -1,16 +1,17 @@
 import inspect
 from datetime import datetime
+from typing import List
 
 
 def debug_print(debug: bool, *args: str) -> None:
     if not debug:
         return
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    message = " ".join(map(str, args))
+    timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    message: str = " ".join(map(str, args))
     print(f"\033[97m[\033[90m{timestamp}\033[97m]\033[90m {message}\033[0m")
 
 
-def merge_fields(target, source):
+def merge_fields(target: dict, source: dict) -> None:
     for key, value in source.items():
         if isinstance(value, str):
             target[key] += value
@@ -24,11 +25,11 @@ def merge_chunk(final_response: dict, delta: dict) -> None:
 
     tool_calls = delta.get("tool_calls")
     if tool_calls and len(tool_calls) > 0:
-        index = tool_calls[0].pop("index")
+        index: int = tool_calls[0].pop("index")
         merge_fields(final_response["tool_calls"][index], tool_calls[0])
 
 
-def function_to_json(func) -> dict:
+def function_to_json(func: callable) -> dict:
     """
     Converts a Python function into a JSON-serializable dictionary
     that describes the function's signature, including its name,
@@ -51,23 +52,23 @@ def function_to_json(func) -> dict:
     }
 
     try:
-        signature = inspect.signature(func)
+        signature: inspect.Signature = inspect.signature(func)
     except ValueError as e:
         raise ValueError(
             f"Failed to get signature for function {func.__name__}: {str(e)}"
         )
 
-    parameters = {}
+    parameters: dict = {}
     for param in signature.parameters.values():
         try:
-            param_type = type_map.get(param.annotation, "string")
+            param_type: str = type_map.get(param.annotation, "string")
         except KeyError as e:
             raise KeyError(
                 f"Unknown type annotation {param.annotation} for parameter {param.name}: {str(e)}"
             )
-        parameters[param.name] = {"type": param_type}
+        parameters[param.name]: dict = {"type": param_type}
 
-    required = [
+    required: List[str] = [
         param.name
         for param in signature.parameters.values()
         if param.default == inspect._empty

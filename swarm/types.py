@@ -1,9 +1,5 @@
-from openai.types.chat import ChatCompletionMessage
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-    Function,
-)
-from typing import List, Callable, Union, Optional
+# Standard library imports
+from typing import List, Callable, Union, Optional, Any
 
 # Third-party imports
 from pydantic import BaseModel
@@ -21,7 +17,7 @@ class Agent(BaseModel):
 
 
 class Response(BaseModel):
-    messages: List = []
+    messages: List[Any] = []  # Change to List[Any] for more flexibility
     agent: Optional[Agent] = None
     context_variables: dict = {}
 
